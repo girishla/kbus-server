@@ -7,7 +7,7 @@ public class SecurityTestApiConfig {
   public static final Integer PORT = 9704;
 
   public static final AuthenticationRequest USER_AUTHENTICATION_REQUEST = new AuthenticationRequest("username", "password");
-  public static final AuthenticationRequest ADMIN_AUTHENTICATION_REQUEST = new AuthenticationRequest("admin", "admin");
+  public static final AuthenticationRequest ADMIN_AUTHENTICATION_REQUEST = new AuthenticationRequest("admin", "admin123");
   public static final AuthenticationRequest EXPIRED_AUTHENTICATION_REQUEST = new AuthenticationRequest("expired", "expired");
   public static final AuthenticationRequest INVALID_AUTHENTICATION_REQUEST = new AuthenticationRequest("user", "abc123");
 

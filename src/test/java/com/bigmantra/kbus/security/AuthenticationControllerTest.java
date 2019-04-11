@@ -47,7 +47,7 @@ public class AuthenticationControllerTest extends AbstractWebIntegrationTest {
         }
 
         userRepo.save(UserObjectMother.getNormalUserFor("username", "password"));
-        userRepo.save(UserObjectMother.getAdminUserFor("admin", "admin"));
+        userRepo.save(UserObjectMother.getAdminUserFor("admin", "admin123"));
         userRepo.save(UserObjectMother.getExpiredUserFor("expired", "expired"));
         userRepo.save(UserObjectMother.getAdminUserFor("Administrator", "Adm$n$strator"));
 

@@ -7,6 +7,7 @@ import com.bigmantra.kbus.security.SecurityService;
 import com.bigmantra.kbus.security.UserDetailsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,6 +28,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import javax.sql.DataSource;
 
 @Configuration
+@ConditionalOnProperty(prefix = "security", name = "enabled", matchIfMissing = true)
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Slf4j
@@ -44,12 +46,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private DataSource kbusdb;
 
-//    @Autowired
-//    public void configureAuthentication(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
-//        authenticationManagerBuilder
-//                .authenticationProvider(authenticationProvider());
-//
-//    }
 
 
     @Override
@@ -106,7 +102,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .headers()
                 .contentTypeOptions().disable();
 
-//        httpSecurity.httpBasic().disable();
 
         httpSecurity.csrf()
                 .disable()
