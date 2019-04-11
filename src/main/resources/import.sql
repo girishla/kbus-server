@@ -4,3 +4,5 @@ INSERT INTO usergroup(id, createddate, updateddate, version, about, groupname, m
 
 
 INSERT INTO public.usergroupmember(id, createddate, updateddate, version, isaccepted, groupid, userid) VALUES (1, current_date, current_date, 1, true, 1, 1);
+
+INSERT INTO public.expensecategory( id, createddate, updateddate, version, color, groupid, icon, name, userid) VALUES (1, current_date, current_date, 1, 'red', null, null, 'Office Sundry', null);
