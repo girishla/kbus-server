@@ -9,6 +9,7 @@ public interface GroupMemberProjection {
     String getId();
     Group getGroup();
     User getUser();
+    boolean getIsAccepted();
 
 }
 
