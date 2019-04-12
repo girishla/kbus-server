@@ -29,6 +29,7 @@ public class User extends AbstractKbusObject {
 	private String password;
 	
 	private String email;
+	private String phone;
 
 	private boolean enabled=true;
 	

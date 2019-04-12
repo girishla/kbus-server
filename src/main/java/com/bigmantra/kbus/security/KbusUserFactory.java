@@ -19,7 +19,10 @@ public class KbusUserFactory {
       user.getId(),
       user.getUsername(),
       user.getPassword(),
+      user.getFirstName(),
+      user.getLastName(),
       user.getEmail(),
+      user.getPhone(),
       user.getLastPasswordReset(),
        authorities
     );

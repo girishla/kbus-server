@@ -15,6 +15,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class BusDailySummary extends AbstractKbusObject {
 
+	// date stored as yyyymmdd
+	Long dateId;
+
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "groupid")
 	Group group;

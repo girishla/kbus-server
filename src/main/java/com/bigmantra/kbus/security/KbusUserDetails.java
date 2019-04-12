@@ -26,6 +26,11 @@ public class KbusUserDetails implements UserDetails {
 	
 	private String email;
 
+	private String firstName;
+	private String lastName;
+	private String phone;
+
+
 	@JsonIgnore
 	private Date lastPasswordReset;
 
@@ -48,12 +53,15 @@ public class KbusUserDetails implements UserDetails {
 	}
 
 
-	public KbusUserDetails(Long id, String username, String password, String email, Date lastPasswordReset,
+	public KbusUserDetails(Long id, String username, String password,String firstName, String lastName, String email,String phone, Date lastPasswordReset,
 						   Collection<? extends GrantedAuthority> authorities) {
 		this.setId(id);
 		this.setUsername(username);
 		this.setPassword(password);
 		this.setEmail(email);
+		this.setFirstName(firstName);
+		this.setLastName(lastName);
+		this.setPhone(phone);
 		this.setLastPasswordReset(lastPasswordReset);
 		this.setAuthorities(authorities);
 	}
