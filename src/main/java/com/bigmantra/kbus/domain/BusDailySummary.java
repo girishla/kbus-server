@@ -5,6 +5,7 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Entity
 @Table(name = "busdailysummary")
@@ -17,6 +18,9 @@ public class BusDailySummary extends AbstractKbusObject {
 
 	// date stored as yyyymmdd
 	Long dateId;
+
+	private Date summaryDate;
+
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "groupid")
