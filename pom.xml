@@ -90,6 +90,30 @@
             <version>${jjwt.version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.intuit.quickbooks-online/ipp-v3-java-data -->
+        <dependency>
+            <groupId>com.intuit.quickbooks-online</groupId>
+            <artifactId>ipp-v3-java-data</artifactId>
+            <version>5.0.2</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.intuit.quickbooks-online/ipp-v3-java-devkit -->
+        <dependency>
+            <groupId>com.intuit.quickbooks-online</groupId>
+            <artifactId>ipp-v3-java-devkit</artifactId>
+            <version>5.0.2</version>
+
+        </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/com.intuit.quickbooks-online/oauth2-platform-api -->
+        <dependency>
+            <groupId>com.intuit.quickbooks-online</groupId>
+            <artifactId>oauth2-platform-api</artifactId>
+            <version>5.0.2</version>
+        </dependency>
+
+
     </dependencies>
 
     <dependencyManagement>

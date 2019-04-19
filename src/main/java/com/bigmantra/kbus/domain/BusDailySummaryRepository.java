@@ -16,6 +16,8 @@ public interface BusDailySummaryRepository extends JpaRepository<BusDailySummary
 
 
     public List<BusDailySummary> findBySubmittedById(Long userId);
+
+    public List<BusDailySummary> findByGroupIdAndDateIdBetween(Long groupId,Long startDateId, Long endDateId);
     public List<BusDailySummary> findByGroupId(Long groupId);
     public List<BusDailySummary> findByConductorId(Long conductorId);
     public List<BusDailySummary> findBydriverId(Long driverId);

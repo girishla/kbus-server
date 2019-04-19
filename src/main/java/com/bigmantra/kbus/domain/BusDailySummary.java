@@ -1,6 +1,7 @@
 package com.bigmantra.kbus.domain;
 
 import com.bigmantra.kbus.security.User;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.*;
 
 import javax.persistence.*;
@@ -14,6 +15,7 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
+
 public class BusDailySummary extends AbstractKbusObject {
 
 	// date stored as yyyymmdd
@@ -30,6 +32,7 @@ public class BusDailySummary extends AbstractKbusObject {
 	@JoinColumn(name = "driverid")
 	User driver;
 
+	@JsonValue
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "conductorid")
 	User conductor;
