@@ -18,7 +18,7 @@ import java.util.List;
 public class ExpenseService {
 
     private static final String ACCOUNT_QUERY = "select * from Account where AccountType='%s' maxresults 1";
-    private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cheque' maxresults 1";
+    private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cash' maxresults 1";
     private static final String ACCOUNT_EXP_QUERY = "select * from Account where AccountType='%s' and name='Fuel Expenses' maxresults 1";
     private static final String PRODUCT_QUERY = "select * from Item where name='Parker Pen' maxresults 1";
 
@@ -29,37 +29,19 @@ public class ExpenseService {
     @Autowired
     private QBOServiceHelper helper;
 
-    public void createPurchase() {
+    public void createExpense(CustomerNameEnum customerNameEnum, AccountNameEnum accountNameEnum, ProductNameEnum productNameEnum, BigDecimal expenseAmount) {
 
         try {
             DataService service = getDataService();
             Purchase purchase = new Purchase();
-            purchase.setPaymentType(PaymentTypeEnum.CASH);
-            purchase.setPaymentMethodRef(createRef(getPaymentMethodCheque(service)));
+            purchase.setPaymentType(PaymentTypeEnum.EXPENSE);
+            purchase.setPaymentMethodRef(createRef(getPaymentMethodCash(service)));
 
-            Account chequeQccount = getPaymentAccount(service);
-            purchase.setAccountRef(createRef(chequeQccount));
+            Account paymentAccount = getPaymentAccount(service);
+            purchase.setAccountRef(createRef(paymentAccount));
 
-            Line line1 = new Line();
-            line1.setAmount(new BigDecimal("50.00"));
-            line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
-            AccountBasedExpenseLineDetail detail = new AccountBasedExpenseLineDetail();
-            Account expAccount = getExpenseBankAccount(service);
-            ReferenceType expenseAccountRef = createRef(expAccount);
-            detail.setAccountRef(expenseAccountRef);
-            line1.setAccountBasedExpenseLineDetail(detail);
-
-
-            Line line2 = new Line();
-            line2.setAmount(new BigDecimal("9.00"));
-            line2.setDetailType(LineDetailTypeEnum.ITEM_BASED_EXPENSE_LINE_DETAIL);
-            ItemBasedExpenseLineDetail itemBasedExpenseLineDetail = new ItemBasedExpenseLineDetail();
-            Item item = getProduct(service);
-            ReferenceType itemRef = createRef(item);
-            itemBasedExpenseLineDetail.setItemRef(itemRef);
-            itemBasedExpenseLineDetail.setQty(new BigDecimal("1"));
-//            itemBasedExpenseLineDetail.setCustomerRef();
-            line2.setItemBasedExpenseLineDetail(itemBasedExpenseLineDetail);
+            Line line1 = getAccountBasedLine(service);
+            Line line2 = getItemBasedLine(service);
 
 
             List<Line> lines = new ArrayList<Line>();
@@ -78,15 +60,41 @@ public class ExpenseService {
 
     }
 
+    private Line getAccountBasedLine(DataService service) {
+        Line line1 = new Line();
+        line1.setAmount(new BigDecimal("50.00"));
+        line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
+        AccountBasedExpenseLineDetail detail = new AccountBasedExpenseLineDetail();
+        Account expAccount = getExpenseBankAccount(service);
+        ReferenceType expenseAccountRef = createRef(expAccount);
+        detail.setAccountRef(expenseAccountRef);
+        line1.setAccountBasedExpenseLineDetail(detail);
+        return line1;
+    }
+
+    private Line getItemBasedLine(DataService service) {
+        Line line2 = new Line();
+        line2.setAmount(new BigDecimal("9.00"));
+        line2.setDetailType(LineDetailTypeEnum.ITEM_BASED_EXPENSE_LINE_DETAIL);
+        ItemBasedExpenseLineDetail itemBasedExpenseLineDetail = new ItemBasedExpenseLineDetail();
+        Item item = getProduct(service);
+        ReferenceType itemRef = createRef(item);
+        itemBasedExpenseLineDetail.setItemRef(itemRef);
+        itemBasedExpenseLineDetail.setQty(new BigDecimal("1"));
+//            itemBasedExpenseLineDetail.setCustomerRef();
+        line2.setItemBasedExpenseLineDetail(itemBasedExpenseLineDetail);
+        return line2;
+    }
+
 
     /**
-     * Get Bank Account
+     * Get Payment Method
      *
      * @param service
      * @return
      * @throws FMSException
      */
-    private  PaymentMethod getPaymentMethodCheque(DataService service) throws FMSException {
+    private  PaymentMethod getPaymentMethodCash(DataService service) throws FMSException {
         QueryResult queryResult = service.executeQuery(String.format(PAYMENT_METHOD_QUERY));
         List<? extends IEntity> entities = queryResult.getEntities();
         if(!entities.isEmpty()) {
