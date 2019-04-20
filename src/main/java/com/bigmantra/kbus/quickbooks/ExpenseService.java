@@ -18,6 +18,8 @@ import java.util.List;
 public class ExpenseService {
 
     private static final String ACCOUNT_QUERY = "select * from Account where AccountType='%s' maxresults 1";
+    private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cheque' maxresults 1";
+    private static final String ACCOUNT_EXP_QUERY = "select * from Account where AccountType='%s' and name='Fuel Expenses' maxresults 1";
 
 
     @Autowired
@@ -32,13 +34,13 @@ public class ExpenseService {
             DataService service = getDataService();
             Purchase purchase = new Purchase();
             purchase.setPaymentType(PaymentTypeEnum.CASH);
+            purchase.setPaymentMethodRef(createRef(getPaymentMethodCheque(service)));
 
-
-            Account chequeQccount = getCheckBankAccount(service);
+            Account chequeQccount = getPaymentAccount(service);
             purchase.setAccountRef(createRef(chequeQccount));
 
             Line line1 = new Line();
-            line1.setAmount(new BigDecimal("30.00"));
+            line1.setAmount(new BigDecimal("34.00"));
             line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
             AccountBasedExpenseLineDetail detail = new AccountBasedExpenseLineDetail();
             Account expAccount = getExpenseBankAccount(service);
@@ -50,7 +52,7 @@ public class ExpenseService {
             List<Line> lines1 = new ArrayList<Line>();
             lines1.add(line1);
             purchase.setLine(lines1);
-            Purchase purchaseOut = service.add(purchase);
+=            Purchase purchaseOut = service.add(purchase);
         } catch (InvalidTokenException | AuthenticationException e) {
 
             tokenRefresher.refreshAccessToken();
@@ -61,6 +63,25 @@ public class ExpenseService {
 
 
     }
+
+
+    /**
+     * Get Bank Account
+     *
+     * @param service
+     * @return
+     * @throws FMSException
+     */
+    private  PaymentMethod getPaymentMethodCheque(DataService service) throws FMSException {
+        QueryResult queryResult = service.executeQuery(String.format(PAYMENT_METHOD_QUERY));
+        List<? extends IEntity> entities = queryResult.getEntities();
+        if(!entities.isEmpty()) {
+            return (PaymentMethod)entities.get(0);
+        } else {
+            throw new RuntimeException("Could not find Expense Bank account!");
+        }
+    }
+
 
     /**
      * Creates reference type for an entity
@@ -96,7 +117,7 @@ public class ExpenseService {
 
         QueryResult queryResult = null;
         try {
-            queryResult = service.executeQuery(String.format(ACCOUNT_QUERY, AccountTypeEnum.EXPENSE.value()));
+            queryResult = service.executeQuery(String.format(ACCOUNT_EXP_QUERY, AccountTypeEnum.EXPENSE.value()));
         } catch (FMSException e) {
             e.printStackTrace();
         }
@@ -116,8 +137,13 @@ public class ExpenseService {
      * @return
      * @throws FMSException
      */
-    private  Account getCheckBankAccount(DataService service) throws FMSException {
-        QueryResult queryResult = service.executeQuery(String.format(ACCOUNT_QUERY, AccountTypeEnum.BANK.value()));
+    private  Account getPaymentAccount(DataService service) {
+        QueryResult queryResult = null;
+        try {
+            queryResult = service.executeQuery(String.format(ACCOUNT_QUERY, AccountTypeEnum.BANK.value()));
+        } catch (FMSException e) {
+            throw new RuntimeException("Could not find Payee Bank account!");
+        }
         List<? extends IEntity> entities = queryResult.getEntities();
         if(!entities.isEmpty()) {
             return (Account)entities.get(0);
