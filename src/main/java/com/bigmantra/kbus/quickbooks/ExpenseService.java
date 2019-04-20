@@ -20,6 +20,7 @@ public class ExpenseService {
     private static final String ACCOUNT_QUERY = "select * from Account where AccountType='%s' maxresults 1";
     private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cheque' maxresults 1";
     private static final String ACCOUNT_EXP_QUERY = "select * from Account where AccountType='%s' and name='Fuel Expenses' maxresults 1";
+    private static final String PRODUCT_QUERY = "select * from Item where name='Parker Pen' maxresults 1";
 
 
     @Autowired
@@ -40,7 +41,7 @@ public class ExpenseService {
             purchase.setAccountRef(createRef(chequeQccount));
 
             Line line1 = new Line();
-            line1.setAmount(new BigDecimal("34.00"));
+            line1.setAmount(new BigDecimal("50.00"));
             line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
             AccountBasedExpenseLineDetail detail = new AccountBasedExpenseLineDetail();
             Account expAccount = getExpenseBankAccount(service);
@@ -49,10 +50,23 @@ public class ExpenseService {
             line1.setAccountBasedExpenseLineDetail(detail);
 
 
-            List<Line> lines1 = new ArrayList<Line>();
-            lines1.add(line1);
-            purchase.setLine(lines1);
-=            Purchase purchaseOut = service.add(purchase);
+            Line line2 = new Line();
+            line2.setAmount(new BigDecimal("9.00"));
+            line2.setDetailType(LineDetailTypeEnum.ITEM_BASED_EXPENSE_LINE_DETAIL);
+            ItemBasedExpenseLineDetail itemBasedExpenseLineDetail = new ItemBasedExpenseLineDetail();
+            Item item = getProduct(service);
+            ReferenceType itemRef = createRef(item);
+            itemBasedExpenseLineDetail.setItemRef(itemRef);
+            itemBasedExpenseLineDetail.setQty(new BigDecimal("1"));
+//            itemBasedExpenseLineDetail.setCustomerRef();
+            line2.setItemBasedExpenseLineDetail(itemBasedExpenseLineDetail);
+
+
+            List<Line> lines = new ArrayList<Line>();
+            lines.add(line1);
+            lines.add(line2);
+            purchase.setLine(lines);
+            Purchase purchaseOut = service.add(purchase);
         } catch (InvalidTokenException | AuthenticationException e) {
 
             tokenRefresher.refreshAccessToken();
@@ -126,6 +140,30 @@ public class ExpenseService {
             return (Account) entities.get(0);
         } else {
             throw new RuntimeException("Could not find Expense Bank account!");
+        }
+    }
+
+
+    /**
+     * Get Product
+     *
+     * @param service
+     * @return
+     * @throws FMSException
+     */
+    private Item getProduct(DataService service) {
+
+        QueryResult queryResult = null;
+        try {
+            queryResult = service.executeQuery(String.format(PRODUCT_QUERY));
+        } catch (FMSException e) {
+            e.printStackTrace();
+        }
+        List<? extends IEntity> entities = queryResult.getEntities();
+        if (!entities.isEmpty()) {
+            return (Item) entities.get(0);
+        } else {
+            throw new RuntimeException("Could not find Product!");
         }
     }
 
