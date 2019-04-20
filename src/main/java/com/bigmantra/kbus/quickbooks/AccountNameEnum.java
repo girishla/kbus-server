@@ -14,7 +14,8 @@ public enum AccountNameEnum {
     UNION_CHARGES("Union charges", "Union charges"),
     BUS_CLEANER_WAGES("Bus Cleaner wages", "Bus Cleaner wages"),
     OTHER_COSTS_OF_SALES_COS("Other costs of sales - COS", "Other costs of sales - COS"),
-    GREASE_EXPENSE("Grease expense", "Grease expense");
+    GREASE_EXPENSE("Grease expense", "Grease expense"),
+    UNCATEGORISED_EXPENSE("Uncategorised Expense", "Uncategorised Expense");
 
     @Getter
     private String accountName;

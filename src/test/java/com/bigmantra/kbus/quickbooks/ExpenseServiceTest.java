@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.math.BigDecimal;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class ExpenseServiceTest {
@@ -16,7 +18,7 @@ public class ExpenseServiceTest {
     @Test
     public void  canCreateExpenseRecord(){
 
-        expenseService.createPurchase();
+        expenseService.createExpense(CustomerNameEnum.DHARMAPURI_SALEM,AccountNameEnum.UNCATEGORISED_EXPENSE,null,new BigDecimal("199.0"));
 
     }
 
