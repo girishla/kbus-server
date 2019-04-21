@@ -9,22 +9,22 @@ public enum CustomerNameEnum {
     DHARMAPURI_SALEM("Dharmapuri - Salem Route","TN29BD3444");
 
     @Getter
-    private String routeName;
+    private String customerName;
     @Getter
-    private String plateName;
+    private String groupName;
 
-    CustomerNameEnum(String routeName,String plateName) {
-        this.routeName = routeName;
-        this.plateName=plateName;
+    CustomerNameEnum(String customerName,String groupName) {
+        this.customerName = customerName;
+        this.groupName=groupName;
     }
 
     public String getText() {
-        return this.routeName;
+        return this.customerName;
     }
 
-    public static CustomerNameEnum fromRouteName(String routeName) {
+    public static CustomerNameEnum fromRouteName(String customerName) {
         for (CustomerNameEnum b : CustomerNameEnum.values()) {
-            if (b.routeName.equalsIgnoreCase(routeName)) {
+            if (b.customerName.equalsIgnoreCase(customerName)) {
                 return b;
             }
         }
@@ -32,9 +32,9 @@ public enum CustomerNameEnum {
     }
 
 
-    public static CustomerNameEnum fromPlateName(String plateName) {
+    public static CustomerNameEnum fromPlateName(String groupName) {
         for (CustomerNameEnum b : CustomerNameEnum.values()) {
-            if (b.plateName.equalsIgnoreCase(plateName)) {
+            if (b.groupName.equalsIgnoreCase(groupName)) {
                 return b;
             }
         }

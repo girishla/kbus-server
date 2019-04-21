@@ -4,7 +4,10 @@ import lombok.Getter;
 
 public enum ProductNameEnum {
 
-    FUEL_DIESEL("Fuel - Diesel","Fuel - Diesel");
+    FUEL_DIESEL("Fuel - Diesel","Fuel - Diesel"),
+    DHARMAPURI_PAAVAKKAL("Dharmapuri - Pavakkal","TN29BD2324"),
+    DHARMAPURI_HOSUR("Dharmapuri - Hosur","TN29BD3777"),
+    DHARMAPURI_SALEM("Dharmapuri - Salem","TN29BD3444");
 
     @Getter
     private String productName;

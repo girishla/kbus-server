@@ -7,23 +7,29 @@ import com.intuit.ipp.exception.FMSException;
 import com.intuit.ipp.exception.InvalidTokenException;
 import com.intuit.ipp.services.DataService;
 import com.intuit.ipp.services.QueryResult;
+import com.intuit.ipp.util.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Service
 @Slf4j
-public class ExpenseService {
+public class EntityService {
 
     private static final String ACCOUNT_QUERY = "select * from Account where AccountType='%s' maxresults 1";
+    private static final String CUSTOMER_QUERY = "select * from Customer where DisplayName='%s' maxresults 1";
     private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cheque' maxresults 1";
     private static final String ACCOUNT_EXP_QUERY = "select * from Account where AccountType='%s' and name='%s' maxresults 1";
-    private static final String PRODUCT_QUERY = "select * from Item where name='Parker Pen' maxresults 1";
+    private static final String PRODUCT_QUERY = "select * from Item where name='%s' maxresults 1";
 
 
     @Autowired
@@ -42,15 +48,16 @@ public class ExpenseService {
 
             Account paymentAccount = getPaymentAccount(service);
             purchase.setAccountRef(createRef(paymentAccount));
-            Line line;
-            if(accountNameEnum!=null){
-                 line = getAccountBasedLine(service,expenseAmount);
 
-            }else{
-                if(productNameEnum!=null){
-                    line = getItemBasedLine(service,expenseAmount);
-                }else{
-                    throw new IllegalArgumentException("Either Account Name or Product Name is required to be able to creeate an expense.");
+            Line line;
+            if (accountNameEnum != null) {
+                line = getAccountBasedLine(service, expenseAmount, accountNameEnum,customerNameEnum);
+
+            } else {
+                if (productNameEnum != null) {
+                    line = getItemBasedLine(service, expenseAmount, productNameEnum,customerNameEnum);
+                } else {
+                    throw new IllegalArgumentException("Either Account Name or Product Name is required to be able to create an expense.");
                 }
             }
 
@@ -69,28 +76,51 @@ public class ExpenseService {
 
     }
 
-    private Line getAccountBasedLine(DataService service,BigDecimal amount) {
+    private Line getAccountBasedLine(DataService service, BigDecimal amount, AccountNameEnum accountNameEnum,CustomerNameEnum customerNameEnum) {
         Line line1 = new Line();
         line1.setAmount(amount);
         line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
         AccountBasedExpenseLineDetail detail = new AccountBasedExpenseLineDetail();
-        Account expAccount = getExpenseAccount(service);
+        Account expAccount = getExpenseAccount(service, accountNameEnum);
         ReferenceType expenseAccountRef = createRef(expAccount);
         detail.setAccountRef(expenseAccountRef);
+        detail.setCustomerRef(createRef(getCustomer(service, customerNameEnum)));
         line1.setAccountBasedExpenseLineDetail(detail);
         return line1;
     }
 
-    private Line getItemBasedLine(DataService service,BigDecimal amount) {
+
+    private Line getSalesItemLine(DataService service, BigDecimal amount, ProductNameEnum productNameEnum) {
+        Line line1 = new Line();
+        line1.setAmount(amount);
+        line1.setDetailType(LineDetailTypeEnum.SALES_ITEM_LINE_DETAIL);
+        line1.setLineNum(new BigInteger("1"));
+        line1.setAmount(amount);
+        line1.setDetailType(LineDetailTypeEnum.SALES_ITEM_LINE_DETAIL);
+
+        SalesItemLineDetail salesItemLineDetail1 = new SalesItemLineDetail();
+        Item item = getProduct(service, productNameEnum);
+        ReferenceType itemRef = createRef(item);
+        salesItemLineDetail1.setItemRef(itemRef);
+
+        salesItemLineDetail1.setUnitPrice(amount);
+        salesItemLineDetail1.setQty(new BigDecimal(1));
+        line1.setSalesItemLineDetail(salesItemLineDetail1);
+
+        line1.setSalesItemLineDetail(salesItemLineDetail1);
+        return line1;
+    }
+
+    private Line getItemBasedLine(DataService service, BigDecimal amount, ProductNameEnum productNameEnum,CustomerNameEnum customerNameEnum) {
         Line line2 = new Line();
         line2.setAmount(amount);
         line2.setDetailType(LineDetailTypeEnum.ITEM_BASED_EXPENSE_LINE_DETAIL);
         ItemBasedExpenseLineDetail itemBasedExpenseLineDetail = new ItemBasedExpenseLineDetail();
-        Item item = getProduct(service);
+        Item item = getProduct(service, productNameEnum);
         ReferenceType itemRef = createRef(item);
         itemBasedExpenseLineDetail.setItemRef(itemRef);
         itemBasedExpenseLineDetail.setQty(new BigDecimal("1"));
-//            itemBasedExpenseLineDetail.setCustomerRef();
+        itemBasedExpenseLineDetail.setCustomerRef(createRef(getCustomer(service, customerNameEnum)));
         line2.setItemBasedExpenseLineDetail(itemBasedExpenseLineDetail);
         return line2;
     }
@@ -103,11 +133,17 @@ public class ExpenseService {
      * @return
      * @throws FMSException
      */
-    private  PaymentMethod getPaymentMethodCash(DataService service) throws FMSException {
-        QueryResult queryResult = service.executeQuery(String.format(PAYMENT_METHOD_QUERY));
+    private PaymentMethod getPaymentMethodCash(DataService service)  {
+        QueryResult queryResult = null;
+        try {
+            queryResult = service.executeQuery(String.format(PAYMENT_METHOD_QUERY));
+        } catch (FMSException e) {
+            tokenRefresher.refreshAccessToken();
+            e.printStackTrace();
+        }
         List<? extends IEntity> entities = queryResult.getEntities();
-        if(!entities.isEmpty()) {
-            return (PaymentMethod)entities.get(0);
+        if (!entities.isEmpty()) {
+            return (PaymentMethod) entities.get(0);
         } else {
             throw new RuntimeException("Could not find Expense Bank account!");
         }
@@ -144,12 +180,13 @@ public class ExpenseService {
      * @return
      * @throws FMSException
      */
-    private Account getExpenseAccount(DataService service) {
+    private Account getExpenseAccount(DataService service, AccountNameEnum accountNameEnum) {
 
         QueryResult queryResult = null;
         try {
-            queryResult = service.executeQuery(String.format(ACCOUNT_EXP_QUERY,AccountTypeEnum.EXPENSE.value(),"Uncategorised Expense"));
+            queryResult = service.executeQuery(String.format(ACCOUNT_EXP_QUERY, AccountTypeEnum.EXPENSE.value(), accountNameEnum.getAccountName()));
         } catch (FMSException e) {
+            tokenRefresher.refreshAccessToken();
             e.printStackTrace();
         }
         List<? extends IEntity> entities = queryResult.getEntities();
@@ -168,14 +205,16 @@ public class ExpenseService {
      * @return
      * @throws FMSException
      */
-    private Item getProduct(DataService service) {
+    private Item getProduct(DataService service, ProductNameEnum productNameEnum) {
 
         QueryResult queryResult = null;
         try {
-            queryResult = service.executeQuery(String.format(PRODUCT_QUERY));
+            queryResult = service.executeQuery(String.format(PRODUCT_QUERY, productNameEnum.getProductName()));
         } catch (FMSException e) {
+            tokenRefresher.refreshAccessToken();
             e.printStackTrace();
         }
+
         List<? extends IEntity> entities = queryResult.getEntities();
         if (!entities.isEmpty()) {
             return (Item) entities.get(0);
@@ -186,28 +225,80 @@ public class ExpenseService {
 
 
     /**
+     * Get Customer
+     *
+     * @param service
+     * @return
+     * @throws
+     */
+    private Customer getCustomer(DataService service, CustomerNameEnum customerNameEnum) {
+
+        QueryResult queryResult = null;
+        try {
+            queryResult = service.executeQuery(String.format(CUSTOMER_QUERY, customerNameEnum.getCustomerName()));
+        } catch (FMSException e) {
+            tokenRefresher.refreshAccessToken();
+
+            e.printStackTrace();
+        }
+        List<? extends IEntity> entities = queryResult.getEntities();
+        if (!entities.isEmpty()) {
+            return (Customer) entities.get(0);
+        } else {
+            throw new RuntimeException("Could not find Customer!");
+        }
+    }
+
+
+
+    /**
      * Get Bank Account
      *
      * @param service
      * @return
      * @throws FMSException
      */
-    private  Account getPaymentAccount(DataService service) {
+    private Account getPaymentAccount(DataService service) {
         QueryResult queryResult = null;
         try {
             queryResult = service.executeQuery(String.format(ACCOUNT_QUERY, AccountTypeEnum.BANK.value()));
         } catch (FMSException e) {
-            throw new RuntimeException("Could not find Payee Bank account!");
+            tokenRefresher.refreshAccessToken();
+
+            throw new RuntimeException("Could not find Bank account!");
         }
         List<? extends IEntity> entities = queryResult.getEntities();
-        if(!entities.isEmpty()) {
-            return (Account)entities.get(0);
-        }
-        else {
+        if (!entities.isEmpty()) {
+            return (Account) entities.get(0);
+        } else {
             throw new RuntimeException("Could not find Cheque Bank account!");
         }
 
     }
 
 
+    public void createSalesReceipt(Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) {
+
+
+        try {
+            DataService service = getDataService();
+            SalesReceipt salesReceipt = new SalesReceipt();
+            salesReceipt.setTxnDate(receiptDate);
+            Line line1 = getSalesItemLine(service, amount, productNameEnum);
+            salesReceipt.setLine(Arrays.asList(line1));
+            salesReceipt.setDepositToAccountRef(createRef(getPaymentAccount(service)));
+            salesReceipt.setCustomerRef(createRef(getCustomer(service, customerNameEnum)));
+            salesReceipt.setApplyTaxAfterDiscount(false);
+            salesReceipt.setTotalAmt(amount);
+            salesReceipt.setGlobalTaxCalculation(GlobalTaxCalculationEnum.NOT_APPLICABLE);
+            service.add(salesReceipt);
+        } catch (InvalidTokenException | AuthenticationException e) {
+            tokenRefresher.refreshAccessToken();
+            log.error("Invalid Auth token...Calling refresh....Please rerun test");
+        } catch (FMSException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error inserting Sales Receipt record.", e);
+        }
+
+    }
 }
