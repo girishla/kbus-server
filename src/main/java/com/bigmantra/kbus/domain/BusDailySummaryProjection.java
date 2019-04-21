@@ -40,9 +40,9 @@ public interface BusDailySummaryProjection {
 
     BigDecimal getDieselExpense();
 
-    BigDecimal getOilExpense();
+    BigDecimal getdieselLitres();
 
-    BigDecimal getWaterExpense();
+    BigDecimal getgreaseExpense();
 
     BigDecimal getDriverPathaExpense();
 

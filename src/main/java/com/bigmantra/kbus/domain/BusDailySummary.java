@@ -55,8 +55,8 @@ public class BusDailySummary extends AbstractKbusObject {
 	private BigDecimal single10Collection;
 
 	private BigDecimal dieselExpense;
-	private BigDecimal oilExpense;
-	private BigDecimal waterExpense;
+	private BigDecimal dieselLitres;
+	private BigDecimal greaseExpense;
 	private BigDecimal driverPathaExpense;
 	private BigDecimal driverSalaryAllowanceExpense;
 	private BigDecimal conductorPathaExpense;
