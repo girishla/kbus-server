@@ -1,7 +1,8 @@
-package com.bigmantra.kbus.domain;
+package com.bigmantra.kbus.tripsheet;
 
 
 
+import com.bigmantra.kbus.domain.BusDailySummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.stereotype.Repository;

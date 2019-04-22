@@ -38,43 +38,7 @@ public class EntityService {
     @Autowired
     private QBOServiceHelper helper;
 
-    public void createExpense(CustomerNameEnum customerNameEnum, AccountNameEnum accountNameEnum, ProductNameEnum productNameEnum, BigDecimal expenseAmount) {
 
-        try {
-            DataService service = getDataService();
-            Purchase purchase = new Purchase();
-            purchase.setPaymentType(PaymentTypeEnum.CASH);
-            purchase.setPaymentMethodRef(createRef(getPaymentMethodCash(service)));
-
-            Account paymentAccount = getPaymentAccount(service);
-            purchase.setAccountRef(createRef(paymentAccount));
-
-            Line line;
-            if (accountNameEnum != null) {
-                line = getAccountBasedLine(service, expenseAmount, accountNameEnum,customerNameEnum);
-
-            } else {
-                if (productNameEnum != null) {
-                    line = getItemBasedLine(service, expenseAmount, productNameEnum,customerNameEnum);
-                } else {
-                    throw new IllegalArgumentException("Either Account Name or Product Name is required to be able to create an expense.");
-                }
-            }
-
-            purchase.setLine(Arrays.asList(line));
-            Purchase purchaseOut = service.add(purchase);
-            log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Successfully Added Purchase!");
-        } catch (InvalidTokenException | AuthenticationException e) {
-
-            tokenRefresher.refreshAccessToken();
-            log.error("Invalid Auth token...Calling refresh....Please rerun test");
-        } catch (FMSException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error inserting Purchase record.", e);
-        }
-
-
-    }
 
     private Line getAccountBasedLine(DataService service, BigDecimal amount, AccountNameEnum accountNameEnum,CustomerNameEnum customerNameEnum) {
         Line line1 = new Line();
@@ -265,19 +229,19 @@ public class EntityService {
         } catch (FMSException e) {
             tokenRefresher.refreshAccessToken();
 
-            throw new RuntimeException("Could not find Bank account!");
+            throw new RuntimeException("Could not find Payment account!");
         }
         List<? extends IEntity> entities = queryResult.getEntities();
         if (!entities.isEmpty()) {
             return (Account) entities.get(0);
         } else {
-            throw new RuntimeException("Could not find Cheque Bank account!");
+            throw new RuntimeException("Could not find Payment account!");
         }
 
     }
 
 
-    public void createSalesReceipt(Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) {
+    public SalesReceipt createSalesReceipt(Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) {
 
 
         try {
@@ -291,14 +255,62 @@ public class EntityService {
             salesReceipt.setApplyTaxAfterDiscount(false);
             salesReceipt.setTotalAmt(amount);
             salesReceipt.setGlobalTaxCalculation(GlobalTaxCalculationEnum.NOT_APPLICABLE);
-            service.add(salesReceipt);
+            return service.add(salesReceipt);
         } catch (InvalidTokenException | AuthenticationException e) {
             tokenRefresher.refreshAccessToken();
             log.error("Invalid Auth token...Calling refresh....Please rerun test");
+            throw new RuntimeException("Invalid Auth token...Calling refresh....Please rerun test.", e);
         } catch (FMSException e) {
             e.printStackTrace();
             throw new RuntimeException("Error inserting Sales Receipt record.", e);
         }
+
+    }
+
+
+    public Purchase createExpense(List<ExpenseDTO> expenseDTOs) {
+
+        try {
+            DataService service = getDataService();
+            Purchase purchase = new Purchase();
+            purchase.setPaymentType(PaymentTypeEnum.CASH);
+            purchase.setPaymentMethodRef(createRef(getPaymentMethodCash(service)));
+
+            Account paymentAccount = getPaymentAccount(service);
+            purchase.setAccountRef(createRef(paymentAccount));
+
+            List<Line> lines=new ArrayList<>();
+
+            expenseDTOs.forEach((dto)->{
+                Line line;
+                if (dto.getAccountNameEnum() != null) {
+                    line = getAccountBasedLine(service, dto.getExpenseAmount(), dto.getAccountNameEnum(),dto.getCustomerNameEnum());
+                } else {
+                    if (dto.getProductNameEnum() != null) {
+                        line = getItemBasedLine(service, dto.getExpenseAmount(), dto.getProductNameEnum(),dto.getCustomerNameEnum());
+                    } else {
+                        throw new IllegalArgumentException("Either Account Name or Product Name is required to be able to create an expense.");
+                    }
+                }
+
+                lines.add(line);
+            });
+
+            purchase.setLine(lines);
+            log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Successfully Added Expense!");
+
+            return service.add(purchase);
+        } catch (InvalidTokenException | AuthenticationException e) {
+
+            tokenRefresher.refreshAccessToken();
+            log.error("Invalid Auth token...Calling refresh....Please rerun ");
+            throw new RuntimeException("Invalid Auth token...Calling refresh....Please rerun ", e);
+
+        } catch (FMSException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error inserting Purchase record.", e);
+        }
+
 
     }
 }

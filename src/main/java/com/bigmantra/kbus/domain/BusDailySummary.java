@@ -68,5 +68,22 @@ public class BusDailySummary extends AbstractKbusObject {
 	private BigDecimal cleanerExpense;
 
 
+	private String salesReceiptId;
+	private String expenseId;
+
+
+	public BigDecimal getTotalCollection(){
+		return getSingle1Collection()
+				.add(getSingle2Collection())
+				.add(getSingle3Collection())
+				.add(getSingle4Collection())
+				.add(getSingle5Collection())
+				.add(getSingle6Collection())
+				.add(getSingle7Collection())
+				.add(getSingle8Collection())
+				.add(getSingle9Collection())
+				.add(getSingle10Collection());
+
+	}
 
 }
