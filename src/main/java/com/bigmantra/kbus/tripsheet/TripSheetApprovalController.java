@@ -25,7 +25,7 @@ public class TripSheetApprovalController {
     private EntityService entityService;
 
     @RequestMapping(method = RequestMethod.PATCH)
-    public ResponseEntity<?> authenticationRequest(@RequestBody TripSheetApprovalRequest tripSheetApprovalRequest) throws FMSException {
+    public ResponseEntity<?> authenticationRequest(@RequestBody TripSheetApprovalRequest tripSheetApprovalRequest) throws Exception {
 
         BusDailySummary tripSheet = repo.findById(tripSheetApprovalRequest.getBusSummaryId())
                 .orElseThrow(() -> new IllegalArgumentException("Could not find Trip sheet. Please verify Trip sheet id"));

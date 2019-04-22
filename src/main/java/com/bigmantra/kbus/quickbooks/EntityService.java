@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -28,7 +29,7 @@ public class EntityService {
     private static final String ACCOUNT_QUERY = "select * from Account where AccountType='%s' maxresults 1";
     private static final String CUSTOMER_QUERY = "select * from Customer where DisplayName='%s' maxresults 1";
     private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cheque' maxresults 1";
-    private static final String ACCOUNT_EXP_QUERY = "select * from Account where AccountType='%s' and name='%s' maxresults 1";
+    private static final String ACCOUNT_EXP_QUERY = "select * from Account where name='%s' maxresults 1";
     private static final String PRODUCT_QUERY = "select * from Item where name='%s' maxresults 1";
 
     @Autowired
@@ -97,7 +98,7 @@ public class EntityService {
      */
 
     @Retryable(
-            value = {FMSException.class},
+            value = FMSException.class,
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
     private PaymentMethod getPaymentMethodCash(DataService service) throws FMSException {
@@ -118,10 +119,25 @@ public class EntityService {
      *
      * @param e
      */
+
     @Recover
-    void handleFMSException(FMSException e) {
+    public PaymentMethod handleFMSException_getPaymentMethodCash(FMSException e,DataService service) {
         tokenRefresher.refreshAccessToken();
+        return null;
     }
+
+    @Recover
+    public DataService handleFMSException_getDataService(FMSException e,DataService service) {
+        tokenRefresher.refreshAccessToken();
+        return null;
+    }
+
+    @Recover
+    public Account handleFMSException_getExpenseAccount(FMSException e,DataService service) {
+        tokenRefresher.refreshAccessToken();
+        return null;
+    }
+
 
 
     /**
@@ -138,7 +154,7 @@ public class EntityService {
 
 
     @Retryable(
-            value = {FMSException.class},
+            value = FMSException.class,
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
     private DataService getDataService() throws FMSException {
@@ -156,13 +172,13 @@ public class EntityService {
      * @throws FMSException
      */
     @Retryable(
-            value = {InvalidTokenException.class, AuthenticationException.class},
+            value = FMSException.class,
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
     private Account getExpenseAccount(DataService service, AccountNameEnum accountNameEnum) throws FMSException {
 
         QueryResult queryResult = null;
-        queryResult = service.executeQuery(String.format(ACCOUNT_EXP_QUERY, AccountTypeEnum.EXPENSE.value(), accountNameEnum.getAccountName()));
+        queryResult = service.executeQuery(String.format(ACCOUNT_EXP_QUERY, accountNameEnum.getAccountName()));
 
         List<? extends IEntity> entities = queryResult.getEntities();
         if (!entities.isEmpty()) {
@@ -181,10 +197,10 @@ public class EntityService {
      * @throws FMSException
      */
     @Retryable(
-            value = {InvalidTokenException.class, AuthenticationException.class},
+            value = {FMSException.class},
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
-    private Item getProduct(DataService service, ProductNameEnum productNameEnum) throws FMSException {
+    public Item getProduct(DataService service, ProductNameEnum productNameEnum) throws FMSException {
 
         QueryResult queryResult = null;
         queryResult = service.executeQuery(String.format(PRODUCT_QUERY, productNameEnum.getProductName()));
@@ -196,6 +212,19 @@ public class EntityService {
             throw new RuntimeException("Could not find Product!" + productNameEnum.getProductName());
         }
     }
+
+    @Recover
+    public Item handleFMSException_getProduct(FMSException e,DataService service, ProductNameEnum productNameEnum) {
+        tokenRefresher.refreshAccessToken();
+        return null;
+    }
+
+    @Recover
+    public SalesReceipt handleFMSException_createSalesReceipt(FMSException e,Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) {
+        tokenRefresher.refreshAccessToken();
+        return null;
+    }
+
 
 
     /**
@@ -232,7 +261,7 @@ public class EntityService {
      * @throws FMSException
      */
     @Retryable(
-            value = {InvalidTokenException.class, AuthenticationException.class},
+            value = FMSException.class,
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
     private Account getPaymentAccount(DataService service) throws FMSException {
@@ -250,7 +279,7 @@ public class EntityService {
 
 
     @Retryable(
-            value = {InvalidTokenException.class, AuthenticationException.class},
+            value = FMSException.class,
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
     public SalesReceipt createSalesReceipt(Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) throws FMSException {
@@ -303,8 +332,13 @@ public class EntityService {
             lines.add(line);
         });
 
-        purchase.setLine(lines);
-        log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Successfully Added Expense!");
+
+        lines.forEach((line)->log.info(" Amount is for :" + line.getDetailType() + ":::" + line.getAmount()));
+
+
+        purchase.setLine(lines
+                .stream()
+                .filter(line->line.getAmount()!=null).collect(Collectors.toList()));
 
         return service.add(purchase);
 
