@@ -20,7 +20,7 @@ public class EntityServiceTest {
     @Test
     public void canCreateExpenseRecord() {
 
-        entityService.createExpense(CustomerNameEnum.DHARMAPURI_SALEM, AccountNameEnum.UNCATEGORISED_EXPENSE, null, new BigDecimal("139.0"));
+//        entityService.createExpense(CustomerNameEnum.DHARMAPURI_SALEM, AccountNameEnum.UNCATEGORISED_EXPENSE, null, new BigDecimal("139.0"));
 
     }
 

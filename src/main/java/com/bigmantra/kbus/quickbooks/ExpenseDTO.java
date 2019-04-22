@@ -1,6 +1,6 @@
 package com.bigmantra.kbus.quickbooks;
 
-import com.bigmantra.kbus.domain.BusDailySummary;
+import com.bigmantra.kbus.tripsheet.BusDailySummary;
 import lombok.Builder;
 import lombok.Data;
 

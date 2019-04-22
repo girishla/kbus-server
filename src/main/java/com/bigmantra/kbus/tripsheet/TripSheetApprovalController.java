@@ -1,6 +1,5 @@
 package com.bigmantra.kbus.tripsheet;
 
-import com.bigmantra.kbus.domain.BusDailySummary;
 import com.bigmantra.kbus.quickbooks.CustomerNameEnum;
 import com.bigmantra.kbus.quickbooks.EntityService;
 import com.bigmantra.kbus.quickbooks.ExpenseDTO;
@@ -28,7 +27,7 @@ public class TripSheetApprovalController {
     public ResponseEntity<?> authenticationRequest(@RequestBody TripSheetApprovalRequest tripSheetApprovalRequest) {
 
         BusDailySummary tripSheet = repo.findById(tripSheetApprovalRequest.getBusSummaryId())
-                .orElseThrow(() -> new IllegalArgumentException("Could not find Tripsheet. Please verify Trip sheet id"));
+                .orElseThrow(() -> new IllegalArgumentException("Could not find Trip sheet. Please verify Trip sheet id"));
 
 
         if(!tripSheet.getSalesReceiptId().isEmpty()){

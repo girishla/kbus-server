@@ -1,5 +1,7 @@
-package com.bigmantra.kbus.domain;
+package com.bigmantra.kbus.tripsheet;
 
+import com.bigmantra.kbus.domain.AbstractKbusObject;
+import com.bigmantra.kbus.domain.Group;
 import com.bigmantra.kbus.security.User;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.*;

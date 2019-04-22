@@ -1,9 +1,6 @@
 package com.bigmantra.kbus.tripsheet;
 
 import com.bigmantra.kbus.AbstractWebIntegrationTest;
-import com.bigmantra.kbus.domain.BusDailySummary;
-import com.bigmantra.kbus.security.SecurityTestApiConfig;
-import com.bigmantra.kbus.security.UserObjectMother;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

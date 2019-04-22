@@ -1,6 +1,5 @@
 package com.bigmantra.kbus.tripsheet;
 
-import com.bigmantra.kbus.domain.BusDailySummary;
 import com.bigmantra.kbus.domain.Group;
 import com.bigmantra.kbus.security.User;
 import org.springframework.data.rest.core.config.Projection;
