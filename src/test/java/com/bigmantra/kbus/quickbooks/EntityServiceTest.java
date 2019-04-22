@@ -1,5 +1,6 @@
 package com.bigmantra.kbus.quickbooks;
 
+import com.intuit.ipp.exception.FMSException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ public class EntityServiceTest {
 
 
     @Test
-    public void canCreateSalesReceiptRecord() {
+    public void canCreateSalesReceiptRecord() throws FMSException {
 
         entityService.createSalesReceipt(new Date(), CustomerNameEnum.DHARMAPURI_SALEM, ProductNameEnum.DHARMAPURI_SALEM, new BigDecimal("11111.0"));
 

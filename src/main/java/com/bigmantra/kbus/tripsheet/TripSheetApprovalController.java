@@ -6,6 +6,7 @@ import com.bigmantra.kbus.quickbooks.ExpenseDTO;
 import com.bigmantra.kbus.quickbooks.ProductNameEnum;
 import com.intuit.ipp.data.Purchase;
 import com.intuit.ipp.data.SalesReceipt;
+import com.intuit.ipp.exception.FMSException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("tripsheet/approval")
+@RequestMapping("busdailysummaries/{busSummaryId}/approval")
 public class TripSheetApprovalController {
 
     @Autowired
@@ -24,17 +25,17 @@ public class TripSheetApprovalController {
     private EntityService entityService;
 
     @RequestMapping(method = RequestMethod.PATCH)
-    public ResponseEntity<?> authenticationRequest(@RequestBody TripSheetApprovalRequest tripSheetApprovalRequest) {
+    public ResponseEntity<?> authenticationRequest(@RequestBody TripSheetApprovalRequest tripSheetApprovalRequest) throws FMSException {
 
         BusDailySummary tripSheet = repo.findById(tripSheetApprovalRequest.getBusSummaryId())
                 .orElseThrow(() -> new IllegalArgumentException("Could not find Trip sheet. Please verify Trip sheet id"));
 
 
-        if(!tripSheet.getSalesReceiptId().isEmpty()){
+        if(!(tripSheet.getSalesReceiptId()==null)){
             throw new IllegalStateException("This Trip Sheet already has a Sales Receipt associated. Aborting approval!");
         }
 
-        if(!tripSheet.getExpenseId().isEmpty()){
+        if(!(tripSheet.getExpenseId()==null)){
             throw new IllegalStateException("This Trip Sheet already has a Expense record associated. Aborting approval!");
         }
 
