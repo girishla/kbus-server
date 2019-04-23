@@ -5,6 +5,7 @@ import com.intuit.ipp.data.*;
 import com.intuit.ipp.exception.AuthenticationException;
 import com.intuit.ipp.exception.FMSException;
 import com.intuit.ipp.exception.InvalidTokenException;
+import com.intuit.ipp.query.GenerateQuery;
 import com.intuit.ipp.services.DataService;
 import com.intuit.ipp.services.QueryResult;
 import lombok.extern.slf4j.Slf4j;
@@ -22,15 +23,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.intuit.ipp.query.GenerateQuery.$;
+import static com.intuit.ipp.query.GenerateQuery.select;
+
 @Service
 @Slf4j
 public class EntityService {
 
     private static final String ACCOUNT_QUERY = "select * from Account where AccountType='%s' maxresults 1";
+    private static final String ACCOUNT_QUERY_IN = "select * from Account where Name in %s";
     private static final String CUSTOMER_QUERY = "select * from Customer where DisplayName='%s' maxresults 1";
+    private static final String CUSTOMER_QUERY_IN = "select * from Customer where DisplayName in %s";
     private static final String PAYMENT_METHOD_QUERY = "select * from PaymentMethod where name='Cheque' maxresults 1";
+    private static final String PAYMENT_METHOD_IN = "select * from PaymentMethod where name in %s";
     private static final String ACCOUNT_EXP_QUERY = "select * from Account where name='%s' maxresults 1";
     private static final String PRODUCT_QUERY = "select * from Item where name='%s' maxresults 1";
+    private static final String PRODUCT_QUERY_IN = "select * from Item where name in %s";
 
     @Autowired
     private TokenRefresher tokenRefresher;
@@ -38,16 +46,21 @@ public class EntityService {
     @Autowired
     private QBOServiceHelper helper;
 
+    private List<Account> accounts;
+    private List<Customer> customers;
+    private List<Item> products;
+    private List<PaymentMethod> paymentMethods;
+
 
     private Line getAccountBasedLine(DataService service, BigDecimal amount, AccountNameEnum accountNameEnum, CustomerNameEnum customerNameEnum) throws FMSException {
         Line line1 = new Line();
         line1.setAmount(amount);
         line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
         AccountBasedExpenseLineDetail detail = new AccountBasedExpenseLineDetail();
-        Account expAccount = getExpenseAccount(service, accountNameEnum);
+        Account expAccount = getExpenseAccount(accountNameEnum);
         ReferenceType expenseAccountRef = createRef(expAccount);
         detail.setAccountRef(expenseAccountRef);
-        detail.setCustomerRef(createRef(getCustomer(service, customerNameEnum)));
+        detail.setCustomerRef(createRef(getCustomer(customerNameEnum)));
         line1.setAccountBasedExpenseLineDetail(detail);
         return line1;
     }
@@ -62,7 +75,7 @@ public class EntityService {
         line1.setDetailType(LineDetailTypeEnum.SALES_ITEM_LINE_DETAIL);
 
         SalesItemLineDetail salesItemLineDetail1 = new SalesItemLineDetail();
-        Item item = getProduct(service, productNameEnum);
+        Item item = getProduct(productNameEnum);
         ReferenceType itemRef = createRef(item);
         salesItemLineDetail1.setItemRef(itemRef);
 
@@ -79,11 +92,11 @@ public class EntityService {
         line2.setAmount(amount);
         line2.setDetailType(LineDetailTypeEnum.ITEM_BASED_EXPENSE_LINE_DETAIL);
         ItemBasedExpenseLineDetail itemBasedExpenseLineDetail = new ItemBasedExpenseLineDetail();
-        Item item = getProduct(service, productNameEnum);
+        Item item = getProduct(productNameEnum);
         ReferenceType itemRef = createRef(item);
         itemBasedExpenseLineDetail.setItemRef(itemRef);
         itemBasedExpenseLineDetail.setQty(new BigDecimal("1"));
-        itemBasedExpenseLineDetail.setCustomerRef(createRef(getCustomer(service, customerNameEnum)));
+        itemBasedExpenseLineDetail.setCustomerRef(createRef(getCustomer(customerNameEnum)));
         line2.setItemBasedExpenseLineDetail(itemBasedExpenseLineDetail);
         return line2;
     }
@@ -114,30 +127,21 @@ public class EntityService {
     }
 
 
-    /**
-     * Refresh token and retry
-     *
-     * @param e
-     */
+
 
     @Recover
-    public PaymentMethod handleFMSException_getPaymentMethodCash(FMSException e,DataService service) {
+    public DataService handleFMSException_getDataService(FMSException e, DataService service) {
         tokenRefresher.refreshAccessToken();
         return null;
     }
 
     @Recover
-    public DataService handleFMSException_getDataService(FMSException e,DataService service) {
-        tokenRefresher.refreshAccessToken();
-        return null;
-    }
+    public void handleFMSException(FMSException e, DataService service) {
+        e.printStackTrace();
 
-    @Recover
-    public Account handleFMSException_getExpenseAccount(FMSException e,DataService service) {
         tokenRefresher.refreshAccessToken();
-        return null;
-    }
 
+    }
 
 
     /**
@@ -164,97 +168,99 @@ public class EntityService {
         return service;
     }
 
-    /**
-     * Get Bank Account
-     *
-     * @param service
-     * @return
-     * @throws FMSException
-     */
-    @Retryable(
-            value = FMSException.class,
-            maxAttempts = 2,
-            backoff = @Backoff(delay = 1000))
-    private Account getExpenseAccount(DataService service, AccountNameEnum accountNameEnum) throws FMSException {
+    private Account getExpenseAccount(AccountNameEnum accountNameEnum) throws FMSException {
 
-        QueryResult queryResult = null;
-        queryResult = service.executeQuery(String.format(ACCOUNT_EXP_QUERY, accountNameEnum.getAccountName()));
+        return accounts.stream()
+                .filter(a -> a.getName()
+                        .equals(accountNameEnum.getAccountName()))
+                .findAny()
+                .orElseThrow(()-> new RuntimeException("Could not find Account!" + accountNameEnum.getAccountName()));
 
-        List<? extends IEntity> entities = queryResult.getEntities();
-        if (!entities.isEmpty()) {
-            return (Account) entities.get(0);
-        } else {
-            throw new RuntimeException("Could not find Expense account! " + accountNameEnum.getAccountName());
-        }
+    }
+
+
+    public Item getProduct(ProductNameEnum productNameEnum){
+
+
+        return products.stream()
+                .filter(p -> p.getName()
+                        .equals(productNameEnum.getProductName()))
+                .findAny()
+                .orElseThrow(()-> new RuntimeException("Could not find Product!" + productNameEnum.getProductName()));
+
     }
 
 
     /**
-     * Get Product
+     * Get Payment Account
      *
-     * @param service
      * @return
      * @throws FMSException
      */
-    @Retryable(
-            value = {FMSException.class},
-            maxAttempts = 2,
-            backoff = @Backoff(delay = 1000))
-    public Item getProduct(DataService service, ProductNameEnum productNameEnum) throws FMSException {
 
-        QueryResult queryResult = null;
-        queryResult = service.executeQuery(String.format(PRODUCT_QUERY, productNameEnum.getProductName()));
+    private Account getPaymentAccount() throws FMSException {
+        return accounts.stream()
+                .filter(a -> a.getName()
+                        .equals(AccountNameEnum.CASH_ON_HAND.getAccountName()))
+                .findAny()
+                .orElseThrow(()-> new RuntimeException("Could not find Account!" + AccountNameEnum.CASH_ON_HAND.getAccountName()));
 
-        List<? extends IEntity> entities = queryResult.getEntities();
-        if (!entities.isEmpty()) {
-            return (Item) entities.get(0);
-        } else {
-            throw new RuntimeException("Could not find Product!" + productNameEnum.getProductName());
-        }
     }
-
-    @Recover
-    public Item handleFMSException_getProduct(FMSException e,DataService service, ProductNameEnum productNameEnum) {
-        tokenRefresher.refreshAccessToken();
-        return null;
-    }
-
-    @Recover
-    public SalesReceipt handleFMSException_createSalesReceipt(FMSException e,Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) {
-        tokenRefresher.refreshAccessToken();
-        return null;
-    }
-
-
 
     /**
      * Get Customer
      *
-     * @param service
+     * @param customerNameEnum
      * @return
      * @throws
      */
-    private Customer getCustomer(DataService service, CustomerNameEnum customerNameEnum) {
+    private Customer getCustomer(CustomerNameEnum customerNameEnum) {
+        return customers.stream()
+                .filter(c -> c.getDisplayName()
+                        .equals(customerNameEnum.getCustomerName()))
+                .findAny()
+                .orElseThrow(()-> new RuntimeException("Could not find Customer!" + customerNameEnum.getCustomerName()));
 
-        QueryResult queryResult = null;
-        try {
-            queryResult = service.executeQuery(String.format(CUSTOMER_QUERY, customerNameEnum.getCustomerName()));
-        } catch (FMSException e) {
-            tokenRefresher.refreshAccessToken();
+    }
 
-            e.printStackTrace();
-        }
-        List<? extends IEntity> entities = queryResult.getEntities();
-        if (!entities.isEmpty()) {
-            return (Customer) entities.get(0);
-        } else {
-            throw new RuntimeException("Could not find Customer! " + customerNameEnum.getCustomerName());
-        }
+    /**
+     * Get Customer
+     *
+     * @param paymentMethodEnum
+     * @return
+     * @throws
+     */
+    private PaymentMethod getPaymentMethod(PaymentMethodEnum paymentMethodEnum) {
+        return paymentMethods.stream()
+                .filter(c -> c.getName()
+                        .equals("Cheque"))
+                .findAny()
+                .orElseThrow(()-> new RuntimeException("Could not find Payment Method Cheque"));
+
     }
 
 
+    @Recover
+    public Item handleFMSException_getProduct(FMSException e, DataService service, ProductNameEnum productNameEnum) {
+        tokenRefresher.refreshAccessToken();
+        return null;
+    }
+
+    @Recover
+    public SalesReceipt handleFMSException_createSalesReceipt(FMSException e, Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) {
+        tokenRefresher.refreshAccessToken();
+        e.printStackTrace();
+        return null;
+    }
+
+
+
+
+
+
+
     /**
-     * Get Bank Account
+     * Get All Accounts
      *
      * @param service
      * @return
@@ -264,16 +270,133 @@ public class EntityService {
             value = FMSException.class,
             maxAttempts = 2,
             backoff = @Backoff(delay = 1000))
-    private Account getPaymentAccount(DataService service) throws FMSException {
-        QueryResult queryResult = null;
-        queryResult = service.executeQuery(String.format(ACCOUNT_QUERY, AccountTypeEnum.BANK.value()));
+    private void refreshAllAccounts(DataService service) throws FMSException {
 
-        List<? extends IEntity> entities = queryResult.getEntities();
-        if (!entities.isEmpty()) {
-            return (Account) entities.get(0);
-        } else {
-            throw new RuntimeException("Could not find Payment account!");
-        }
+
+        String accountsCSV="('"+String.join("','", new String[]{
+                AccountNameEnum.BUS_DRIVER_PATHA.getAccountName(),
+                AccountNameEnum.BUS_DRIVER_SALARY_ALLOWANCE.getAccountName(),
+                AccountNameEnum.BUS_CONDUCTOR_PATHA.getAccountName(),
+                AccountNameEnum.BUS_CONDUCTOR_SALARY_ALLOWANCE.getAccountName(),
+                AccountNameEnum.BUS_CHECKING_PATHA.getAccountName(),
+                AccountNameEnum.COMMISSION_CHARGES.getAccountName(),
+                AccountNameEnum.UNION_CHARGES.getAccountName(),
+                AccountNameEnum.BUS_CLEANER_WAGES.getAccountName(),
+                AccountNameEnum.OTHER_COSTS_OF_SALES_COS.getAccountName(),
+                AccountNameEnum.GREASE_EXPENSE.getAccountName(),
+                AccountNameEnum.UNCATEGORISED_EXPENSE.getAccountName(),
+                AccountNameEnum.CASH_ON_HAND.getAccountName()
+
+        })+ "')";
+
+
+        log.debug("In clause is " + accountsCSV);
+
+
+        accounts = service.executeQuery(String.format(ACCOUNT_QUERY_IN,accountsCSV))
+                .getEntities()
+                .stream()
+                .map(entity -> (Account) entity)
+                .collect(Collectors.toList());
+
+
+    }
+
+
+    /**
+     * Get All Customers
+     *
+     * @param service
+     * @return
+     * @throws FMSException
+     */
+    @Retryable(
+            value = FMSException.class,
+            maxAttempts = 2,
+            backoff = @Backoff(delay = 1000))
+    private void refreshAllCustomers(DataService service) throws FMSException {
+
+        String customersCSV="('"+String.join("','", new String[]{
+                CustomerNameEnum.DHARMAPURI_HOSUR.getCustomerName(),
+                CustomerNameEnum.DHARMAPURI_PAAVAKKAL.getCustomerName(),
+                CustomerNameEnum.DHARMAPURI_SALEM.getCustomerName()})+ "')";
+
+
+        customers = service.executeQuery(String.format(CUSTOMER_QUERY_IN,customersCSV))
+                .getEntities()
+                .stream()
+                .map(entity -> (Customer) entity)
+                .collect(Collectors.toList());
+
+    }
+
+
+    /**
+     * Get All Products
+     *
+     * @param service
+     * @return
+     * @throws FMSException
+     */
+    @Retryable(
+            value = FMSException.class,
+            maxAttempts = 2,
+            backoff = @Backoff(delay = 1000))
+    private void refreshAllProducts(DataService service) throws FMSException {
+
+
+        String productCSV="('"+ String.join("','", new String[]{
+                ProductNameEnum.DHARMAPURI_HOSUR.getProductName(),
+                ProductNameEnum.DHARMAPURI_PAAVAKKAL.getProductName(),
+                ProductNameEnum.DHARMAPURI_SALEM.getProductName(),
+                ProductNameEnum.FUEL_DIESEL.getProductName()
+        })+ "')";
+
+
+        products = service.executeQuery(String.format(PRODUCT_QUERY_IN,productCSV))
+                .getEntities()
+                .stream()
+                .map(entity -> (Item) entity)
+                .collect(Collectors.toList());
+
+
+    }
+
+
+
+    /**
+     * Get All Customers
+     *
+     * @param service
+     * @return
+     * @throws FMSException
+     */
+    @Retryable(
+            value = FMSException.class,
+            maxAttempts = 2,
+            backoff = @Backoff(delay = 1000))
+    private void refreshAllPaymentMethods(DataService service) throws FMSException {
+
+
+        String paymentMethodCSV="('"+String.join("','", new String[]{"Cheque"})+ "')";
+
+
+        paymentMethods = service.executeQuery(String.format(PAYMENT_METHOD_IN,paymentMethodCSV))
+                .getEntities()
+                .stream()
+                .map(entity -> (PaymentMethod) entity)
+                .collect(Collectors.toList());
+
+
+    }
+
+
+
+    private void refreshAllData(DataService service) throws FMSException {
+        this.refreshAllAccounts(service);
+        this.refreshAllCustomers(service);
+        this.refreshAllProducts(service);
+        this.refreshAllPaymentMethods(service);
 
     }
 
@@ -285,12 +408,13 @@ public class EntityService {
     public SalesReceipt createSalesReceipt(Date receiptDate, CustomerNameEnum customerNameEnum, ProductNameEnum productNameEnum, BigDecimal amount) throws FMSException {
 
         DataService service = getDataService();
+        refreshAllData(service);
         SalesReceipt salesReceipt = new SalesReceipt();
         salesReceipt.setTxnDate(receiptDate);
         Line line1 = getSalesItemLine(service, amount, productNameEnum);
         salesReceipt.setLine(Arrays.asList(line1));
-        salesReceipt.setDepositToAccountRef(createRef(getPaymentAccount(service)));
-        salesReceipt.setCustomerRef(createRef(getCustomer(service, customerNameEnum)));
+        salesReceipt.setDepositToAccountRef(createRef(getPaymentAccount()));
+        salesReceipt.setCustomerRef(createRef(getCustomer(customerNameEnum)));
         salesReceipt.setApplyTaxAfterDiscount(false);
         salesReceipt.setTotalAmt(amount);
         salesReceipt.setGlobalTaxCalculation(GlobalTaxCalculationEnum.NOT_APPLICABLE);
@@ -302,11 +426,12 @@ public class EntityService {
     public Purchase createExpense(List<ExpenseDTO> expenseDTOs) throws FMSException {
 
         DataService service = getDataService();
+        refreshAllData(service);
         Purchase purchase = new Purchase();
         purchase.setPaymentType(PaymentTypeEnum.CASH);
-        purchase.setPaymentMethodRef(createRef(getPaymentMethodCash(service)));
+        purchase.setPaymentMethodRef(createRef(getPaymentMethod(PaymentMethodEnum.CHECK)));
 
-        Account paymentAccount = getPaymentAccount(service);
+        Account paymentAccount = getPaymentAccount();
         purchase.setAccountRef(createRef(paymentAccount));
 
         List<Line> lines = new ArrayList<>();
@@ -333,12 +458,13 @@ public class EntityService {
         });
 
 
-        lines.forEach((line)->log.info(" Amount is for :" + line.getDetailType() + ":::" + line.getAmount()));
+        lines.forEach((line) -> log.info(" Amount is for :" + line.getDetailType() + ":::" + line.getAmount()));
 
 
         purchase.setLine(lines
                 .stream()
-                .filter(line->line.getAmount()!=null).collect(Collectors.toList()));
+                .filter(line -> line.getAmount() != null)
+                .collect(Collectors.toList()));
 
         return service.add(purchase);
 

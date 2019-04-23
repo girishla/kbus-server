@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.util.Date;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@ActiveProfiles("test")
 public class EntityServiceTest {
 
     @Autowired
@@ -37,7 +39,7 @@ public class EntityServiceTest {
     @Test
     public void canCreateSalesReceiptRecord() throws Exception {
 
-        entityService.createSalesReceipt(new Date(), CustomerNameEnum.DHARMAPURI_SALEM, ProductNameEnum.DHARMAPURI_SALEM, new BigDecimal("11111.0"));
+        entityService.createSalesReceipt(new Date(), CustomerNameEnum.DHARMAPURI_SALEM, ProductNameEnum.DHARMAPURI_SALEM, new BigDecimal("664.0"));
 
     }
 

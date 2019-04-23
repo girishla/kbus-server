@@ -15,7 +15,9 @@ public enum AccountNameEnum {
     BUS_CLEANER_WAGES("Bus Cleaner wages", "Bus Cleaner wages"),
     OTHER_COSTS_OF_SALES_COS("Other costs of sales - COS", "Other costs of sales - COS"),
     GREASE_EXPENSE("Grease expense", "Grease expense"),
-    UNCATEGORISED_EXPENSE("Uncategorised Expense", "Uncategorised Expense");
+    UNCATEGORISED_EXPENSE("Uncategorised Expense", "Uncategorised Expense"),
+    CASH_ON_HAND("Cash on Hand", "Cash on Hand");
+
 
     @Getter
     private String accountName;
@@ -45,6 +47,8 @@ public enum AccountNameEnum {
         }
         return null;
     }
+
+
 
 
 }
