@@ -33,7 +33,7 @@ public class ExpenseDTO {
                 .expenseAmount(tripSheet.getDieselExpense())
                 .productQuantity(tripSheet.getDieselLitres())
                 .expenseDate(tripSheet.getSummaryDate())
-                .description("Driver: " + tripSheet.getDriver()
+                .description(tripSheet.getDriver()
                         .getFirstName() + " " + tripSheet.getDriver()
                         .getLastName())
                 .build());
