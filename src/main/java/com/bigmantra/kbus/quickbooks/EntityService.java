@@ -49,7 +49,7 @@ public class EntityService {
     private List<PaymentMethod> paymentMethods;
 
 
-    private Line getAccountBasedLine(DataService service, BigDecimal amount, AccountNameEnum accountNameEnum, CustomerNameEnum customerNameEnum) throws FMSException {
+    private Line getAccountBasedLine(DataService service, BigDecimal amount, AccountNameEnum accountNameEnum, CustomerNameEnum customerNameEnum, String description) throws FMSException {
         Line line1 = new Line();
         line1.setAmount(amount);
         line1.setDetailType(LineDetailTypeEnum.ACCOUNT_BASED_EXPENSE_LINE_DETAIL);
@@ -59,11 +59,15 @@ public class EntityService {
         detail.setAccountRef(expenseAccountRef);
         detail.setCustomerRef(createRef(getCustomer(customerNameEnum)));
         line1.setAccountBasedExpenseLineDetail(detail);
+        if (description != null) {
+            line1.setDescription(description);
+
+        }
         return line1;
     }
 
 
-    private Line getSalesItemLine(DataService service, BigDecimal amount, ProductNameEnum productNameEnum) throws FMSException {
+    private Line getSalesItemLine(DataService service, BigDecimal amount, ProductNameEnum productNameEnum, Date receiptDate) throws FMSException {
         Line line1 = new Line();
         line1.setAmount(amount);
         line1.setDetailType(LineDetailTypeEnum.SALES_ITEM_LINE_DETAIL);
@@ -78,13 +82,14 @@ public class EntityService {
 
         salesItemLineDetail1.setUnitPrice(amount);
         salesItemLineDetail1.setQty(new BigDecimal(1));
+        salesItemLineDetail1.setServiceDate(receiptDate);
         line1.setSalesItemLineDetail(salesItemLineDetail1);
 
         line1.setSalesItemLineDetail(salesItemLineDetail1);
         return line1;
     }
 
-    private Line getItemBasedLine(DataService service, BigDecimal amount, ProductNameEnum productNameEnum, CustomerNameEnum customerNameEnum) throws FMSException {
+    private Line getItemBasedLine(DataService service, BigDecimal amount, ProductNameEnum productNameEnum, CustomerNameEnum customerNameEnum, String description) throws FMSException {
         Line line2 = new Line();
         line2.setAmount(amount);
         line2.setDetailType(LineDetailTypeEnum.ITEM_BASED_EXPENSE_LINE_DETAIL);
@@ -95,6 +100,10 @@ public class EntityService {
         itemBasedExpenseLineDetail.setQty(new BigDecimal("1"));
         itemBasedExpenseLineDetail.setCustomerRef(createRef(getCustomer(customerNameEnum)));
         line2.setItemBasedExpenseLineDetail(itemBasedExpenseLineDetail);
+        if (description != null) {
+            line2.setDescription(description);
+
+        }
         return line2;
     }
 
@@ -122,10 +131,6 @@ public class EntityService {
             throw new RuntimeException("Could not find Expense Bank account!");
         }
     }
-
-
-
-
 
 
     /**
@@ -158,19 +163,19 @@ public class EntityService {
                 .filter(a -> a.getName()
                         .equals(accountNameEnum.getAccountName()))
                 .findAny()
-                .orElseThrow(()-> new RuntimeException("Could not find Account!" + accountNameEnum.getAccountName()));
+                .orElseThrow(() -> new RuntimeException("Could not find Account!" + accountNameEnum.getAccountName()));
 
     }
 
 
-    public Item getProduct(ProductNameEnum productNameEnum){
+    public Item getProduct(ProductNameEnum productNameEnum) {
 
 
         return products.stream()
                 .filter(p -> p.getName()
                         .equals(productNameEnum.getProductName()))
                 .findAny()
-                .orElseThrow(()-> new RuntimeException("Could not find Product!" + productNameEnum.getProductName()));
+                .orElseThrow(() -> new RuntimeException("Could not find Product!" + productNameEnum.getProductName()));
 
     }
 
@@ -187,7 +192,7 @@ public class EntityService {
                 .filter(a -> a.getName()
                         .equals(AccountNameEnum.CASH_ON_HAND.getAccountName()))
                 .findAny()
-                .orElseThrow(()-> new RuntimeException("Could not find Account!" + AccountNameEnum.CASH_ON_HAND.getAccountName()));
+                .orElseThrow(() -> new RuntimeException("Could not find Account!" + AccountNameEnum.CASH_ON_HAND.getAccountName()));
 
     }
 
@@ -203,7 +208,7 @@ public class EntityService {
                 .filter(c -> c.getDisplayName()
                         .equals(customerNameEnum.getCustomerName()))
                 .findAny()
-                .orElseThrow(()-> new RuntimeException("Could not find Customer!" + customerNameEnum.getCustomerName()));
+                .orElseThrow(() -> new RuntimeException("Could not find Customer!" + customerNameEnum.getCustomerName()));
 
     }
 
@@ -219,7 +224,7 @@ public class EntityService {
                 .filter(c -> c.getName()
                         .equals("Cheque"))
                 .findAny()
-                .orElseThrow(()-> new RuntimeException("Could not find Payment Method Cheque"));
+                .orElseThrow(() -> new RuntimeException("Could not find Payment Method Cheque"));
 
     }
 
@@ -251,8 +256,6 @@ public class EntityService {
     }
 
 
-
-
     /**
      * Get All Accounts
      *
@@ -267,7 +270,7 @@ public class EntityService {
     private void refreshAllAccounts(DataService service) throws FMSException {
 
 
-        String accountsCSV="('"+String.join("','", new String[]{
+        String accountsCSV = "('" + String.join("','", new String[]{
                 AccountNameEnum.BUS_DRIVER_PATHA.getAccountName(),
                 AccountNameEnum.BUS_DRIVER_SALARY_ALLOWANCE.getAccountName(),
                 AccountNameEnum.BUS_CONDUCTOR_PATHA.getAccountName(),
@@ -281,13 +284,13 @@ public class EntityService {
                 AccountNameEnum.UNCATEGORISED_EXPENSE.getAccountName(),
                 AccountNameEnum.CASH_ON_HAND.getAccountName()
 
-        })+ "')";
+        }) + "')";
 
 
         log.debug("In clause is " + accountsCSV);
 
 
-        accounts = service.executeQuery(String.format(ACCOUNT_QUERY_IN,accountsCSV))
+        accounts = service.executeQuery(String.format(ACCOUNT_QUERY_IN, accountsCSV))
                 .getEntities()
                 .stream()
                 .map(entity -> (Account) entity)
@@ -310,13 +313,13 @@ public class EntityService {
             backoff = @Backoff(delay = 1000))
     private void refreshAllCustomers(DataService service) throws FMSException {
 
-        String customersCSV="('"+String.join("','", new String[]{
+        String customersCSV = "('" + String.join("','", new String[]{
                 CustomerNameEnum.DHARMAPURI_HOSUR.getCustomerName(),
                 CustomerNameEnum.DHARMAPURI_PAAVAKKAL.getCustomerName(),
-                CustomerNameEnum.DHARMAPURI_SALEM.getCustomerName()})+ "')";
+                CustomerNameEnum.DHARMAPURI_SALEM.getCustomerName()}) + "')";
 
 
-        customers = service.executeQuery(String.format(CUSTOMER_QUERY_IN,customersCSV))
+        customers = service.executeQuery(String.format(CUSTOMER_QUERY_IN, customersCSV))
                 .getEntities()
                 .stream()
                 .map(entity -> (Customer) entity)
@@ -339,15 +342,15 @@ public class EntityService {
     private void refreshAllProducts(DataService service) throws FMSException {
 
 
-        String productCSV="('"+ String.join("','", new String[]{
+        String productCSV = "('" + String.join("','", new String[]{
                 ProductNameEnum.DHARMAPURI_HOSUR.getProductName(),
                 ProductNameEnum.DHARMAPURI_PAAVAKKAL.getProductName(),
                 ProductNameEnum.DHARMAPURI_SALEM.getProductName(),
                 ProductNameEnum.FUEL_DIESEL.getProductName()
-        })+ "')";
+        }) + "')";
 
 
-        products = service.executeQuery(String.format(PRODUCT_QUERY_IN,productCSV))
+        products = service.executeQuery(String.format(PRODUCT_QUERY_IN, productCSV))
                 .getEntities()
                 .stream()
                 .map(entity -> (Item) entity)
@@ -355,7 +358,6 @@ public class EntityService {
 
 
     }
-
 
 
     /**
@@ -372,10 +374,10 @@ public class EntityService {
     private void refreshAllPaymentMethods(DataService service) throws FMSException {
 
 
-        String paymentMethodCSV="('"+String.join("','", new String[]{"Cheque"})+ "')";
+        String paymentMethodCSV = "('" + String.join("','", new String[]{"Cheque"}) + "')";
 
 
-        paymentMethods = service.executeQuery(String.format(PAYMENT_METHOD_IN,paymentMethodCSV))
+        paymentMethods = service.executeQuery(String.format(PAYMENT_METHOD_IN, paymentMethodCSV))
                 .getEntities()
                 .stream()
                 .map(entity -> (PaymentMethod) entity)
@@ -383,7 +385,6 @@ public class EntityService {
 
 
     }
-
 
 
     private void refreshAllData(DataService service) throws FMSException {
@@ -405,7 +406,7 @@ public class EntityService {
         refreshAllData(service);
         SalesReceipt salesReceipt = new SalesReceipt();
         salesReceipt.setTxnDate(receiptDate);
-        Line line1 = getSalesItemLine(service, amount, productNameEnum);
+        Line line1 = getSalesItemLine(service, amount, productNameEnum,receiptDate);
         salesReceipt.setLine(Arrays.asList(line1));
         salesReceipt.setDepositToAccountRef(createRef(getPaymentAccount()));
         salesReceipt.setCustomerRef(createRef(getCustomer(customerNameEnum)));
@@ -425,7 +426,9 @@ public class EntityService {
         purchase.setPaymentType(PaymentTypeEnum.CASH);
         purchase.setPaymentMethodRef(createRef(getPaymentMethod(PaymentMethodEnum.CHECK)));
 
-        purchase.setTxnDate(expenseDTOs.size()>0?expenseDTOs.get(0).getExpenseDate(): Calendar.getInstance().getTime());
+        purchase.setTxnDate(expenseDTOs.size() > 0 ? expenseDTOs.get(0)
+                .getExpenseDate() : Calendar.getInstance()
+                .getTime());
         Account paymentAccount = getPaymentAccount();
         purchase.setAccountRef(createRef(paymentAccount));
 
@@ -437,11 +440,11 @@ public class EntityService {
             try {
                 if (dto.getAccountNameEnum() != null) {
 
-                    line = getAccountBasedLine(service, dto.getExpenseAmount(), dto.getAccountNameEnum(), dto.getCustomerNameEnum());
+                    line = getAccountBasedLine(service, dto.getExpenseAmount(), dto.getAccountNameEnum(), dto.getCustomerNameEnum(), dto.getDescription());
 
                 } else {
                     if (dto.getProductNameEnum() != null) {
-                        line = getItemBasedLine(service, dto.getExpenseAmount(), dto.getProductNameEnum(), dto.getCustomerNameEnum());
+                        line = getItemBasedLine(service, dto.getExpenseAmount(), dto.getProductNameEnum(), dto.getCustomerNameEnum(), dto.getDescription());
                     } else {
                         throw new IllegalArgumentException("Either Account Name or Product Name is required to be able to create an expense.");
                     }
