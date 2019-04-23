@@ -129,19 +129,6 @@ public class EntityService {
 
 
 
-    @Recover
-    public DataService handleFMSException_getDataService(FMSException e, DataService service) {
-        tokenRefresher.refreshAccessToken();
-        return null;
-    }
-
-    @Recover
-    public void handleFMSException(FMSException e, DataService service) {
-        e.printStackTrace();
-
-        tokenRefresher.refreshAccessToken();
-
-    }
 
 
     /**
@@ -253,8 +240,18 @@ public class EntityService {
         return null;
     }
 
+    @Recover
+    public DataService handleFMSException_getDataService(FMSException e, DataService service) {
+        tokenRefresher.refreshAccessToken();
+        return null;
+    }
 
+    @Recover
+    public void handleFMSException(FMSException e, DataService service) {
+        e.printStackTrace();
+        tokenRefresher.refreshAccessToken();
 
+    }
 
 
 
