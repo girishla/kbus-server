@@ -17,10 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.intuit.ipp.query.GenerateQuery.$;
@@ -428,6 +425,7 @@ public class EntityService {
         purchase.setPaymentType(PaymentTypeEnum.CASH);
         purchase.setPaymentMethodRef(createRef(getPaymentMethod(PaymentMethodEnum.CHECK)));
 
+        purchase.setTxnDate(expenseDTOs.size()>0?expenseDTOs.get(0).getExpenseDate(): Calendar.getInstance().getTime());
         Account paymentAccount = getPaymentAccount();
         purchase.setAccountRef(createRef(paymentAccount));
 

@@ -24,7 +24,6 @@ public class EntityServiceTest {
     @Test
     public void canCreateExpenseRecord() throws FMSException {
 
-//        entityService.createExpense(CustomerNameEnum.DHARMAPURI_SALEM, AccountNameEnum.UNCATEGORISED_EXPENSE, null, new BigDecimal("139.0"));
         entityService.createExpense(Arrays.asList(ExpenseDTO
                 .builder()
                 .customerNameEnum(CustomerNameEnum.DHARMAPURI_SALEM)
