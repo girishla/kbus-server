@@ -128,7 +128,7 @@ public class QuickbooksConnectionController {
                 log.debug("Access token is " + bearerTokenResponse.getAccessToken());
                 log.debug("Refresh token is " + bearerTokenResponse.getRefreshToken());
 
-                return "connected";
+                return new JSONObject().put("response", "Success").toString();
             }
             log.debug("csrf token mismatch ");
         } catch (OAuthException e) {
