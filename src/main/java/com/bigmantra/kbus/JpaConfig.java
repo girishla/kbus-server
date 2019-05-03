@@ -24,64 +24,69 @@ import java.util.Properties;
 
 public class JpaConfig {
 
-	@Autowired
-	@Qualifier("kbusdbjpa")
-	private DataSource kbusdb;
+    @Autowired
+    @Qualifier("kbusdbjpa")
+    private DataSource kbusdb;
 
-	@Value("${spring.jpa.hibernate.ddl-auto}")
-	private String hbm2ddlMode;
+    @Value("${spring.jpa.hibernate.ddl-auto}")
+    private String hbm2ddlMode;
 
-	@Value("${spring.jpa.properties.hibernate.dialect}")
-	private String sqlDialect;
-	
-	@Value("${spring.jpa.show-sql}")
-	private boolean showSql;
-	
-	
-	@Bean
-	@Qualifier("jpatm")
+    @Value("${spring.jpa.properties.hibernate.dialect}")
+    private String sqlDialect;
+
+    @Value("${spring.jpa.show-sql}")
+    private boolean showSql;
+
+
+    @Bean
+    @Qualifier("jpatm")
     PlatformTransactionManager jpaTransactionManager(LocalContainerEntityManagerFactoryBean em) {
-		return new JpaTransactionManager(em.getObject());
-	}
+        return new JpaTransactionManager(em.getObject());
+    }
 
-	@Bean
+    @Bean
     LocalContainerEntityManagerFactoryBean coreEntityManagerFactory() {
 
-		HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
 
-		jpaVendorAdapter.setShowSql(showSql);
+        jpaVendorAdapter.setShowSql(showSql);
 
-		LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
 
-		factoryBean.setDataSource(kbusdb);
-		factoryBean.setJpaVendorAdapter(jpaVendorAdapter);
-		factoryBean.setPackagesToScan(JpaConfig.class.getPackage()
-				.getName());
-		factoryBean.setJpaProperties(additionalProperties());
+        factoryBean.setDataSource(kbusdb);
+        factoryBean.setJpaVendorAdapter(jpaVendorAdapter);
+        factoryBean.setPackagesToScan(JpaConfig.class.getPackage()
+                .getName());
+        factoryBean.setJpaProperties(additionalProperties());
 
-		return factoryBean;
-	}
+        return factoryBean;
+    }
 
-	Properties additionalProperties() {
-		Properties properties = new Properties();
-		properties.setProperty("hibernate.hbm2ddl.auto", hbm2ddlMode);
-		properties.setProperty("hibernate.dialect", sqlDialect);
-		properties.setProperty("hibernate.jdbc.lob.non_contextual_creation","true");
-		return properties;
-	}
-	
+    Properties additionalProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("hibernate.hbm2ddl.auto", hbm2ddlMode);
+        properties.setProperty("hibernate.dialect", sqlDialect);
+        properties.setProperty("hibernate.jdbc.lob.non_contextual_creation", "true");
+        return properties;
+    }
 
-	@Configuration
-	@ConfigurationProperties("spring.datasource")
-	public static class DataSourceConfig extends HikariConfig {
 
-		@Bean
-		@Qualifier("kbusdbjpa")
-		public DataSource kbusdb() {
-			return new HikariDataSource(this);
-		}
+    @Configuration
+    @ConfigurationProperties("spring.datasource")
+    public static class DataSourceConfig extends HikariConfig {
 
-			
-	}
+        @Value("${spring.datasource.url}")
+        private String dbUrl;
+
+        @Bean
+        @Qualifier("kbusdbjpa")
+        public DataSource kbusdb() {
+
+            this.setJdbcUrl(dbUrl);
+            return new HikariDataSource(this);
+        }
+
+
+    }
 
 }
