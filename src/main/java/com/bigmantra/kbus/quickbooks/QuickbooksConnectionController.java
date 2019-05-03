@@ -101,7 +101,7 @@ public class QuickbooksConnectionController {
      * @param session
      * @return
      */
-    @RequestMapping(value="/oauth2redirect", method = RequestMethod.GET)
+    @RequestMapping(value="oauth2redirect", method = RequestMethod.GET)
     public String callBackFromOAuth(@RequestParam("code") String authCode, @RequestParam("state") String state, @RequestParam(value = "realmId", required = false) String realmId, HttpSession session) {
         log.debug("inside oauth2redirect of sample");
         try {
