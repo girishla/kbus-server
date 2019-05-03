@@ -103,7 +103,7 @@ public class QuickbooksConnectionController {
      */
     @RequestMapping(value="/oauth2redirect")
     public String callBackFromOAuth(@RequestParam("code") String authCode, @RequestParam("state") String state, @RequestParam(value = "realmId", required = false) String realmId, HttpSession session) {
-        log.debug("inside oauth2redirect of sample");
+        log.debug("inside oauth2redirect");
         try {
             String csrfToken = (String) session.getAttribute("csrfToken");
             if (csrfToken.equals(state)) {
@@ -124,7 +124,7 @@ public class QuickbooksConnectionController {
                 log.debug("Access token is " + bearerTokenResponse.getAccessToken());
                 log.debug("Refresh token is " + bearerTokenResponse.getRefreshToken());
 
-                return new JSONObject().put("response", "Success").toString();
+                return "connected";
             }
             log.debug("csrf token mismatch ");
         } catch (OAuthException e) {
