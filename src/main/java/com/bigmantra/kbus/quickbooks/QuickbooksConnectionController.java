@@ -101,7 +101,7 @@ public class QuickbooksConnectionController {
      * @param session
      * @return
      */
-    @RequestMapping(value="oauth2redirect", method = RequestMethod.GET)
+    @RequestMapping(value="/oauth2redirect")
     public String callBackFromOAuth(@RequestParam("code") String authCode, @RequestParam("state") String state, @RequestParam(value = "realmId", required = false) String realmId, HttpSession session) {
         log.debug("inside oauth2redirect of sample");
         try {
@@ -112,7 +112,6 @@ public class QuickbooksConnectionController {
 
                 OAuth2PlatformClient client = factory.getOAuth2PlatformClient();
                 String redirectUri = factory.getPropertyValue("OAuth2AppRedirectUri");
-                log.debug("inside oauth2redirect of sample -- redirectUri " + redirectUri);
 
                 BearerTokenResponse bearerTokenResponse = client.retrieveBearerTokens(authCode, redirectUri);
 
