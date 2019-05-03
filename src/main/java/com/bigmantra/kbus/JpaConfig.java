@@ -72,7 +72,7 @@ public class JpaConfig {
 	
 
 	@Configuration
-	@ConfigurationProperties("kbus.datasource")
+	@ConfigurationProperties("spring.datasource")
 	public static class DataSourceConfig extends HikariConfig {
 
 		@Bean
