@@ -62,6 +62,8 @@ public interface BusDailySummaryProjection {
     BigDecimal getUnionExpense();
 
     BigDecimal getCleanerExpense();
+    String getSalesReceiptId();
+    String getExpenseId();
 }
 
 
